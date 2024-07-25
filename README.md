@@ -4,7 +4,6 @@ Mini Project 2 Flutter SuperBootcamp
 
 ## Getting Started
 
-=======
 Username = ferdy
 Password = superbootcamp
 =======
