@@ -1,11 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../logic/product/product_bloc.dart';
 import '../../logic/product/product_event.dart';
 import '../../logic/product/product_state.dart';
-import '../../notification_helper.dart';
+import '../../helper/notification_helper.dart';
 import '../../services/services.dart';
+import '../auth/login_page.dart';
 import 'product_detail_page.dart';
 
 class ProductPage extends StatelessWidget {
@@ -17,10 +19,10 @@ class ProductPage extends StatelessWidget {
       backgroundColor: const Color.fromARGB(255, 84, 247, 127),
       body: BlocProvider(
         create: (context) => ProductBloc(ProductService())..add(FetchProducts()),
-        child: const Column(
+        child: Column(
           children: [
             SizedBox(height: 20),
-            FilterTextFieldWithNotification(), // Menambahkan widget filter dengan ikon notifikasi
+            FilterTextFieldWithNotification(), // Menambahkan widget filter dengan ikon notifikasi dan logout
             Expanded(child: ProductGrid()),
           ],
         ),
@@ -29,7 +31,7 @@ class ProductPage extends StatelessWidget {
   }
 }
 
-// Widget untuk filter produk dengan ikon notifikasi
+// Widget untuk filter produk dengan ikon notifikasi dan logout
 class FilterTextFieldWithNotification extends StatelessWidget {
   const FilterTextFieldWithNotification({super.key});
 
@@ -66,6 +68,22 @@ class FilterTextFieldWithNotification extends StatelessWidget {
                 'Check out our new product!',
                 NotificationHelper.notificationDetails,
               );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.black), // Ikon logout
+            onPressed: () async {
+              try {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error logging out: ${e.toString()}')),
+                );
+              }
             },
           ),
         ],

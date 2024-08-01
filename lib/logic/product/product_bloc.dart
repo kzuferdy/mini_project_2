@@ -1,4 +1,3 @@
-// product_bloc.dart
 import 'package:bloc/bloc.dart';
 import '../../services/services.dart';
 import 'product_event.dart';
@@ -12,8 +11,10 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       emit(ProductLoading());
       try {
         final products = await productService.fetchProducts();
+        print('Fetched Products: ${products.length}'); // Tambahkan logging
         emit(ProductLoaded(products));
       } catch (e) {
+        print('Error: ${e.toString()}'); // Tambahkan logging
         emit(ProductError('Failed to fetch products'));
       }
     });
@@ -29,6 +30,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
         }).toList();
         emit(ProductLoaded(filteredProducts));
       } catch (e) {
+        print('Error: ${e.toString()}'); // Tambahkan logging
         emit(ProductError('Failed to fetch products'));
       }
     });

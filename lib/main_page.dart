@@ -93,9 +93,13 @@ Widget cartButton(BuildContext context) {
       width: 24,
     ),
     onPressed: () {
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return const CartPage();
-      }));
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CartPage(),
+        ),
+      );
     },
   );
 }

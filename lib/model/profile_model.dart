@@ -7,13 +7,14 @@ String profileToJson(ProfileModel data) => json.encode(data.toJson());
 
 class ProfileModel {
   Address address;
-  int id;
+  String id;
   Name name;
   String username;
   String password;
   String email;
   String phone;
   int v;
+  String imageUrl; // Menambahkan field imageUrl
 
   ProfileModel({
     required this.address,
@@ -24,6 +25,7 @@ class ProfileModel {
     required this.email,
     required this.phone,
     required this.v,
+    required this.imageUrl, // Tambahkan ke konstruktor
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) => ProfileModel(
@@ -35,6 +37,7 @@ class ProfileModel {
         email: json["email"],
         phone: json["phone"],
         v: json["__v"],
+        imageUrl: json["imageUrl"] ?? '', // Tambahkan di sini dengan default kosong
       );
 
   Map<String, dynamic> toJson() => {
@@ -46,6 +49,7 @@ class ProfileModel {
         "email": email,
         "phone": phone,
         "__v": v,
+        "imageUrl": imageUrl, // Tambahkan di sini
       };
 }
 

@@ -1,49 +1,93 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:logger/logger.dart';
+import 'package:mini_project_2/model/profile_model.dart';
 import '../model/cart_model.dart';
 import '../model/product_model.dart';
 
 
 class ProductService {
-  final String baseUrl = 'https://fakestoreapi.com/products';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<List<Product>> fetchProducts() async {
-    final response = await http.get(Uri.parse(baseUrl));
-    if (response.statusCode == 200) {
-      List<dynamic> data = json.decode(response.body);
-      return data.map((product) => Product.fromJson(product)).toList();
-    } else {
-      throw Exception('Failed to load products');
-    }
-  }
-
-  final String url = 'https://fakestoreapi.com';
-  Future<Cart> fetchCart() async {
-    final response = await http.get(Uri.parse('$url/carts/1'));
-    if (response.statusCode == 200) {
-      return Cart.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to load cart');
+    try {
+      // Mengambil data dari koleksi 'products' di Firestore
+      QuerySnapshot snapshot = await _firestore.collection('products').get();
+      List<Product> products = snapshot.docs
+          .map((doc) {
+            print('Document Data: ${doc.data()}'); // Tambahkan logging
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            print('Document ID: ${data['id']}'); // Tambahkan logging
+            return Product.fromJson(data);
+          })
+          .toList();
+      return products;
+    } catch (e) {
+      print('Error: ${e.toString()}'); // Tambahkan logging
+      throw Exception('Failed to load products: ${e.toString()}');
     }
   }
 }
-class ProfileService {
-  final http.Client client;
-  final String profileUrl = 'https://fakestoreapi.com/users/1';
 
-  ProfileService(this.client);
+class CartService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<String> fetchProfile() async {
+  Future<Cart> getCart(String cartId) async {
     try {
-      final response = await client.get(Uri.parse(profileUrl));
-      if (response.statusCode == 200) {
-        return response.body;
-      } else {
-        throw Exception('Failed to load profile: ${response.statusCode}');
-      }
+      DocumentSnapshot doc = await _firestore.collection('carts').doc(cartId).get();
+      return Cart.fromFirestore(doc);
     } catch (e) {
-      throw Exception('Failed to load profile: $e');
+      throw Exception('Failed to load cart: $e');
     }
+  }
+
+  Future<List<Cart>> getAllCarts() async {
+    try {
+      QuerySnapshot snapshot = await _firestore.collection('carts').get();
+      return snapshot.docs.map((doc) => Cart.fromFirestore(doc)).toList();
+    } catch (e) {
+      throw Exception('Failed to load carts: $e');
+    }
+  }
+}
+
+class ProfileService {
+  final FirebaseFirestore _firestore;
+
+  ProfileService(this._firestore);
+
+  Future<void> createUser(String userId, String firstName, String lastName) async {
+    await _firestore.collection('users').doc(userId).set({
+      'name': {
+        'firstName': firstName,
+        'lastName': lastName,
+      },
+      'imageUrl': '', // Initialize with an empty string or a default URL
+    });
+  }
+
+  Future<void> updateProfileImage(String userId, String imageUrl) async {
+    await _firestore.collection('users').doc(userId).update({
+      'imageUrl': imageUrl,
+    });
+  }
+
+  Future<void> updateProfileName(String userId, String newName) async {
+    final names = newName.split(' ');
+    await _firestore.collection('users').doc(userId).update({
+      'name': {
+        'firstName': names[0],
+        'lastName': names.length > 1 ? names[1] : '',
+      },
+    });
+  }
+
+  Future<Map<String, dynamic>> getProfile(String userId) async {
+    final doc = await _firestore.collection('users').doc(userId).get();
+    return doc.data() ?? {};
   }
 }

@@ -1,149 +1,218 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:mini_project_2/logic/cart/cart_bloc.dart';
+import 'package:mini_project_2/logic/cart/cart_event.dart';
+import 'package:mini_project_2/logic/cart/cart_state.dart';
+import 'package:mini_project_2/services/services.dart';
 
-import '../../logic/cart/cart_bloc.dart';
-import '../../services/services.dart';
-import 'cart_list.dart';
+import 'cart_detail.dart';
 
-class CartPage extends StatelessWidget {
+class CartPage extends StatefulWidget {
   const CartPage({super.key});
 
   @override
+  _CartPageState createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
+  String filter = '';
+
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade300,
-      appBar: appBar(context),
-      bottomNavigationBar: bottomBar(context),
       body: BlocProvider(
-        create: (context) => CartBloc(
-          apiService: ProductService(),
-        )..add(
-            FetchCart(),
-          ),
-        child: BlocBuilder<CartBloc, CartState>(
-          builder: (context, state) {
-            if (state is CartLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            } else if (state is CartError) {
-              return Center(
-                child: Text(state.message),
-              );
-            } else if (state is CartLoaded) {
-              return CartList(
-                cartItems: state.cart.items,
-                products: state.products,
-                selectedItems: state.selectedItems,
-                favoriteItems: state.favoriteItems,
-                quantities: state.quantities,
-              );
-            } else {
-              return const Center(
-                child: Text('Error'),
-              );
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  AppBar appBar(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: Colors.white,
-      title: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Icon(
-              Icons.arrow_back,
-            ),
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-          Text(
-            'Keranjang',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.6),
-            ),
-          ),
-          const Spacer(),
-          Icon(
-            Icons.favorite_border_outlined,
-            color: Colors.black.withOpacity(0.5),
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-          Icon(
-            Icons.menu,
-            color: Colors.black.withOpacity(0.5),
-          ),
-        ],
-      ),
-      elevation: 4,
-      shadowColor: Colors.grey.shade100,
-    );
-  }
-}
-
-BottomAppBar bottomBar(BuildContext context) {
-  return BottomAppBar(
-    color: Colors.white,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
+        create: (context) => CartBloc(CartService())..add(LoadAllCarts()),
+        child: Column(
           children: [
-            Checkbox(
-              value: false,
-              onChanged: (value) {},
-              side: const BorderSide(
-                color: Colors.grey,
-                width: 2,
-              ),
-            ),
-            const Text('Semua')
-          ],
-        ),
-        Row(
-          children: [
-            const Column(
-              children: [
-                Text('Total'),
-                Text('-'),
-              ],
-            ),
-            const SizedBox(
-              width: 16,
-            ),
             Container(
-              height: 50,
-              width: 100,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.green,
-              ),
-              child: Center(
-                child: Text(
-                  'Beli',
-                  style: GoogleFonts.roboto(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+              color: Colors.green,
+              padding: const EdgeInsets.all(24.0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
                   ),
-                ),
+                  Expanded(
+                    child: Container(
+                      alignment: Alignment.center,
+                      child: TextField(
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                          hintText: 'Cari berdasarkan ID Keranjang',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade200,
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            filter = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 24), // Space between search field and icon
+                  
+                ],
               ),
-            )
+            ),
+            Expanded(
+              child: BlocBuilder<CartBloc, CartState>(
+                builder: (context, state) {
+                  if (state is CartLoading) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (state is AllCartsLoaded) {
+                    final filteredCarts = state.carts
+                        .where((cart) => cart.id.contains(filter))
+                        .toList();
+
+                    if (filteredCarts.isEmpty) {
+                      return Center(child: Text('Tidak ada keranjang yang cocok'));
+                    }
+
+                    return ListView.builder(
+                      itemCount: filteredCarts.length,
+                      itemBuilder: (context, index) {
+                        final cart = filteredCarts[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16.0),
+                            leading: Icon(Icons.shopping_cart, color: Colors.green),
+                            title: Text('Cart ID: ${cart.id}', style: TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('Jumlah Produk: ${cart.products.length}'),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CartDetailPage(cartId: cart.id),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  } else if (state is CartError) {
+                    return Center(child: Text(state.message));
+                  } else {
+                    return Container();
+                  }
+                },
+              ),
+            ),
           ],
-        )
-      ],
-    ),
-  );
+        ),
+      ),
+    );
+  }
 }
+
+class CartSearchDelegate extends SearchDelegate<String> {
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, '');
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final cartBloc = BlocProvider.of<CartBloc>(context);
+    cartBloc.add(LoadCart(query)); // Gunakan ID yang dimasukkan sebagai filter
+
+    return BlocBuilder<CartBloc, CartState>(
+      builder: (context, state) {
+        if (state is CartLoading) {
+          return Center(child: CircularProgressIndicator());
+        } else if (state is CartLoaded) {
+          return ListView.builder(
+            itemCount: state.cart.products.length,
+            itemBuilder: (context, index) {
+              final item = state.cart.products[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16.0),
+                  leading: Icon(Icons.shopping_bag, color: Colors.green),
+                  title: Text('Product ID: ${item.productId}', style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('Quantity: ${item.quantity}'),
+                ),
+              );
+            },
+          );
+        } else if (state is CartError) {
+          return Center(child: Text(state.message));
+        } else {
+          return Container();
+        }
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return Container();
+  }
+}
+
+// class CartPage extends StatelessWidget {
+//   final String cartId;
+
+//   CartPage({required this.cartId});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('Keranjang'),
+//       ),
+//       body: BlocProvider(
+//         create: (context) => CartBloc(CartService())..add(LoadCart(cartId)),
+//         child: BlocBuilder<CartBloc, CartState>(
+//           builder: (context, state) {
+//             if (state is CartLoading) {
+//               return Center(child: CircularProgressIndicator());
+//             } else if (state is CartLoaded) {
+//               return ListView.builder(
+//                 itemCount: state.cart.products.length,
+//                 itemBuilder: (context, index) {
+//                   final item = state.cart.products[index];
+//                   return ListTile(
+//                     title: Text('Product ID: ${item.productId}'),
+//                     subtitle: Text('Quantity: ${item.quantity}'),
+//                   );
+//                 },
+//               );
+//             } else if (state is CartError) {
+//               return Center(child: Text(state.message));
+//             } else {
+//               return Container();
+//             }
+//           },
+//         ),
+//       ),
+//     );
+//   }
+// }

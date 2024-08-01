@@ -1,58 +1,71 @@
-import 'dart:convert';
-
-Cart cartFromJson(String str) => Cart.fromJson(json.decode(str));
-
-String cartToJson(Cart data) => json.encode(data.toJson());
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Cart {
-  int id;
-  int userId;
-  DateTime date;
-  List<CartItem> items;
-  int v;
+  final String id;
+  final int version;
+  final DateTime date;
+  final List<CartItem> products;
+  final int userId;
 
   Cart({
     required this.id,
-    required this.userId,
+    required this.version,
     required this.date,
-    required this.items,
-    required this.v,
+    required this.products,
+    required this.userId,
   });
 
-  factory Cart.fromJson(Map<String, dynamic> json) => Cart(
-        id: json["id"],
-        userId: json["userId"],
-        date: DateTime.parse(json["date"]),
-        items: List<CartItem>.from(
-            json["products"].map((x) => CartItem.fromJson(x))),
-        v: json["__v"],
-      );
+  factory Cart.fromMap(Map<String, dynamic> data) {
+    return Cart(
+      id: data['id'] as String? ?? '', // Pastikan nilai default jika null
+      version: data['__v'] as int? ?? 0,
+      date: data['date'] != null ? DateTime.parse(data['date']) : DateTime.now(),
+      products: (data['products'] as List<dynamic>?)
+              ?.map((item) => CartItem.fromMap(item as Map<String, dynamic>))
+              .toList() ?? [],
+      userId: data['userId'] as int? ?? 0,
+    );
+  }
 
-  Map<String, dynamic> toJson() => {
-        "id": id,
-        "userId": userId,
-        "date": date.toIso8601String(),
-        "products": List<dynamic>.from(items.map((x) => x.toJson())),
-        "__v": v,
-      };
+  factory Cart.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>?;
+    if (data == null) {
+      throw StateError('Missing data for cart');
+    }
+    return Cart.fromMap(data);
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      '__v': version,
+      'date': date.toIso8601String(),
+      'products': products.map((item) => item.toMap()).toList(),
+      'userId': userId,
+    };
+  }
 }
 
 class CartItem {
-  int productId;
-  int quantity;
+  final int productId;
+  final int quantity;
 
   CartItem({
     required this.productId,
     required this.quantity,
   });
 
-  factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
-        productId: json["productId"],
-        quantity: json["quantity"],
-      );
+  factory CartItem.fromMap(Map<String, dynamic> map) {
+    return CartItem(
+      productId: map['productId'] as int? ?? 0,
+      quantity: map['quantity'] as int? ?? 0,
+    );
+  }
 
-  Map<String, dynamic> toJson() => {
-        "productId": productId,
-        "quantity": quantity,
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'productId': productId,
+      'quantity': quantity,
+    };
+  }
 }

@@ -1,43 +1,29 @@
-part of 'cart_bloc.dart';
+abstract class CartEvent {}
 
-sealed class CartEvent extends Equatable {
-  const CartEvent();
+class LoadCart extends CartEvent {
+  final String cartId;
 
-  @override
-  List<Object> get props => [];
+  LoadCart(this.cartId);
 }
 
-// Event untuk mengambil data Cart dan Products
-class FetchCart extends CartEvent {}
+class LoadAllCarts extends CartEvent {}
 
-// Event untuk mengubah status checkbox dari item di Cart
-class ToggleItemSelection extends CartEvent {
-  final int productId;
-  final bool isSelected;
 
-  const ToggleItemSelection(this.productId, this.isSelected);
 
-  @override
-  List<Object> get props => [productId, isSelected];
-}
 
-// Event untuk mengubah status favorit dari item di Cart
-class ToggleFavorite extends CartEvent {
-  final int productId;
+// // Event
+// import 'package:equatable/equatable.dart';
 
-  const ToggleFavorite(this.productId);
+// abstract class CartEvent extends Equatable {
+//   @override
+//   List<Object> get props => [];
+// }
 
-  @override
-  List<Object> get props => [productId];
-}
+// class LoadCart extends CartEvent {
+//   final String cartId;
 
-// Event untuk mengubah jumlah item di Cart
-class UpdateQuantity extends CartEvent {
-  final int productId;
-  final int quantity;
+//   LoadCart(this.cartId);
 
-  const UpdateQuantity(this.productId, this.quantity);
-
-  @override
-  List<Object> get props => [productId, quantity];
-}
+//   @override
+//   List<Object> get props => [cartId];
+// }
