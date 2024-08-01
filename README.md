@@ -7,3 +7,6 @@ Mini Project 2 Flutter SuperBootcamp
 Username = ferdy
 Password = superbootcamp
 =======
+
+kzuferdy@gmail.com
+123qwerty
